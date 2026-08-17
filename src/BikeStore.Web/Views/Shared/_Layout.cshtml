@@ -1,47 +1,81 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - BikeStore.Web</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - BikeStore</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/BikeStore.Web.styles.css" asp-append-version="true" />
+    <style>
+        .navbar-brand { font-weight: 600; letter-spacing: -.02em; }
+        .tarjeta-indicador { border-left: 4px solid #0d6efd; }
+        .tabla-compacta td, .tabla-compacta th { padding: .5rem .75rem; font-size: .925rem; }
+    </style>
 </head>
-<body>
+<body class="bg-light">
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">BikeStore.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    BikeStore
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#menuPrincipal">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="collapse navbar-collapse" id="menuPrincipal">
+                    <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-controller="Bicicletas" asp-action="Index">Inventario</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" asp-controller="Clientes" asp-action="Index">Clientes</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Ventas" asp-action="Index">Ventas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Bicicletas" asp-action="StockBajo">
+                                Stock bajo
+                            </a>
                         </li>
                     </ul>
+                    <a class="btn btn-primary btn-sm" asp-controller="Ventas" asp-action="Create">
+                        Nueva venta
+                    </a>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+    <div class="container py-4">
+        @if (TempData["Exito"] is string mensajeExito)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @mensajeExito
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["Error"] is string mensajeError)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @mensajeError
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <main role="main">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - BikeStore.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <footer class="border-top text-muted py-3 mt-4 bg-white">
+        <div class="container small">
+            BikeStore &mdash; Sistemas Cliente Servidor @DateTime.Now.Year
+            &middot; Frontend MVC consumiendo la API REST
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
