@@ -1,0 +1,23 @@
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build
+[Bb]in/
+[Oo]bj/
+
+## Visual Studio Code
+.vscode/
+
+## NuGet
+*.nupkg
+packages/
+
+## Logs
+*.log
+
+## ASP.NET
+wwwroot/lib/
