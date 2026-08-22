@@ -15,6 +15,13 @@
 
    El script es idempotente: se puede ejecutar varias veces sin
    error, porque cada objeto se verifica antes de crearse.
+
+   Nota sobre los procedimientos: se usa DROP IF EXISTS + CREATE en
+   lugar de CREATE OR ALTER. SQL Server resuelve los nombres que
+   empiezan por 'sp_' buscando primero en la base master, y esa regla
+   hace fallar la comprobacion de existencia de CREATE OR ALTER con el
+   error 208. Con DROP + CREATE el resultado es el mismo y funciona en
+   cualquier version.
    Ejecutar DESPUES de 01_BikeStoreDB.sql.
    ================================================================ */
 
@@ -72,7 +79,10 @@ GO
       motor a generar un plan adecuado a los filtros realmente
       enviados en cada llamada.
    ---------------------------------------------------------------- */
-CREATE OR ALTER PROCEDURE sp_BuscarBicicletas
+DROP PROCEDURE IF EXISTS dbo.sp_BuscarBicicletas;
+GO
+
+CREATE PROCEDURE dbo.sp_BuscarBicicletas
     @Texto           VARCHAR(100) = NULL,   -- busca en marca, modelo y descripcion
     @IdCategoria     INT          = NULL,
     @Marca           VARCHAR(60)  = NULL,
@@ -109,7 +119,10 @@ GO
       producto ya resuelta, para la pantalla de detalle y para el
       endpoint GET /api/ventas/{id}.
    ---------------------------------------------------------------- */
-CREATE OR ALTER PROCEDURE sp_ObtenerDetalleVenta
+DROP PROCEDURE IF EXISTS dbo.sp_ObtenerDetalleVenta;
+GO
+
+CREATE PROCEDURE dbo.sp_ObtenerDetalleVenta
     @IdVenta INT
 AS
 BEGIN
