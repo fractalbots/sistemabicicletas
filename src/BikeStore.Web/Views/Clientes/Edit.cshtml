@@ -1,0 +1,54 @@
+@model ClienteFormViewModel
+@{ ViewData["Title"] = "Editar cliente"; }
+
+<h1 class="bs-titulo">Editar cliente</h1>
+<p class="bs-subtitulo">Se actualiza mediante <code>PUT /api/clientes/@Model.IdCliente</code>.</p>
+
+<div class="card">
+    <div class="card-body">
+        <form asp-action="Edit" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="IdCliente" />
+            <div asp-validation-summary="All" class="text-danger small"></div>
+
+            <div class="col-md-4">
+                <label class="form-label bs-obligatorio">Cedula</label>
+                <input asp-for="Datos.Cedula" class="form-control" maxlength="10" />
+                <span asp-validation-for="Datos.Cedula" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label bs-obligatorio">Nombres</label>
+                <input asp-for="Datos.Nombres" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label bs-obligatorio">Apellidos</label>
+                <input asp-for="Datos.Apellidos" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Telefono</label>
+                <input asp-for="Datos.Telefono" class="form-control" maxlength="15" />
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">Correo</label>
+                <input asp-for="Datos.Correo" class="form-control" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">Direccion</label>
+                <input asp-for="Datos.Direccion" class="form-control" />
+            </div>
+            <div class="col-12">
+                <div class="form-check">
+                    <input asp-for="Datos.Activo" class="form-check-input" />
+                    <label class="form-check-label" asp-for="Datos.Activo">Cliente activo</label>
+                </div>
+            </div>
+
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

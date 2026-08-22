@@ -1,8 +1,101 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model PanelViewModel
+@{ ViewData["Title"] = "Inicio"; }
+
+<h1 class="bs-titulo">Panel general</h1>
+<p class="bs-subtitulo">Resumen del sistema. Los datos provienen de la API REST.</p>
+
+@if (!Model.ApiDisponible)
+{
+    <div class="alert alert-warning">
+        <strong>No hay respuesta de la API.</strong>
+        Verifique que el proyecto <code>BikeStore.API</code> este en ejecucion y que
+        <code>ApiSettings:BaseUrl</code> apunte a su direccion.
+    </div>
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="bs-cifra">@Model.TotalBicicletas</div>
+            <div class="bs-cifra-etiqueta">Bicicletas</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="bs-cifra">@Model.TotalClientes</div>
+            <div class="bs-cifra-etiqueta">Clientes</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="bs-cifra">@Model.TotalVentas</div>
+            <div class="bs-cifra-etiqueta">Ventas registradas</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100"><div class="card-body">
+            <div class="bs-cifra">@Model.PorReponer</div>
+            <div class="bs-cifra-etiqueta">Por reponer</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white fw-semibold">Inventario critico</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Producto</th><th class="text-end">Stock</th><th>Estado</th></tr></thead>
+                    <tbody>
+                    @if (Model.StockCritico.Count == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted py-3">Sin productos por reponer.</td></tr>
+                    }
+                    @foreach (var b in Model.StockCritico)
+                    {
+                        <tr>
+                            <td>@b.Marca @b.Modelo</td>
+                            <td class="text-end">@b.Stock</td>
+                            <td>
+                                <span class="bs-estado @(b.EstadoStock == "AGOTADO" ? "bs-estado-agotado" : "bs-estado-bajo")">
+                                    @b.EstadoStock
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white fw-semibold">Ultimas ventas</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>#</th><th>Fecha</th><th class="text-end">Total</th><th></th></tr></thead>
+                    <tbody>
+                    @if (Model.UltimasVentas.Count == 0)
+                    {
+                        <tr><td colspan="4" class="text-muted py-3">Todavia no hay ventas registradas.</td></tr>
+                    }
+                    @foreach (var v in Model.UltimasVentas)
+                    {
+                        <tr>
+                            <td>@v.IdVenta</td>
+                            <td>@v.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end">@Formato.Dinero(v.Total)</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   asp-controller="Ventas" asp-action="Details" asp-route-id="@v.IdVenta">Ver</a>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>

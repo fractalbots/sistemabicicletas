@@ -1,0 +1,82 @@
+@model Venta
+@{ ViewData["Title"] = $"Factura #{Model.IdVenta}"; }
+
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="bs-titulo h4 mb-0">Factura #@Model.IdVenta</h2>
+            <div class="text-muted small">@Model.Fecha.ToString("dd/MM/yyyy - HH:mm")</div>
+        </div>
+        <span class="bs-estado @(Model.Estado == "EMITIDA" ? "bs-emitida" : "bs-anulada")">@Model.Estado</span>
+    </div>
+
+    <div class="card-body">
+        <div class="border rounded p-3 mb-3 bg-light">
+            <div class="fw-semibold mb-1">Cliente</div>
+            @if (Model.Cliente is not null)
+            {
+                <div class="row">
+                    <div class="col-md-6">
+                        @Model.Cliente.Nombres @Model.Cliente.Apellidos<br />
+                        <span class="text-muted small">Cedula: @Model.Cliente.Cedula</span>
+                    </div>
+                    <div class="col-md-6 text-md-end text-muted small">
+                        @Model.Cliente.Correo<br />@Model.Cliente.Telefono
+                    </div>
+                </div>
+            }
+            else
+            {
+                <span class="text-muted">Sin datos del cliente.</span>
+            }
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Bicicleta</th><th class="text-end">Cantidad</th>
+                        <th class="text-end">Precio unitario</th><th class="text-end">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var d in Model.Detalles)
+                {
+                    <tr>
+                        <td>@(d.Bicicleta is null ? $"Bicicleta {d.IdBicicleta}" : d.Bicicleta.Marca + " " + d.Bicicleta.Modelo)</td>
+                        <td class="text-end">@d.Cantidad</td>
+                        <td class="text-end">@Formato.Dinero(d.PrecioUnitario)</td>
+                        <td class="text-end">@Formato.Dinero(d.Subtotal)</td>
+                    </tr>
+                }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-end">Subtotal</td>
+                        <td class="text-end">@Formato.Dinero(Model.Subtotal)</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-end">IVA (@Model.PorcentajeIva.ToString("0.##")%)</td>
+                        <td class="text-end">@Formato.Dinero(Model.Iva)</td>
+                    </tr>
+                    <tr class="fw-bold">
+                        <td colspan="3" class="text-end">Total</td>
+                        <td class="text-end">@Formato.Dinero(Model.Total)</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="card-footer bg-white d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Volver a ventas</a>
+        @if (Model.Estado == "EMITIDA")
+        {
+            <form asp-action="Anular" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.IdVenta" />
+                <button type="submit" class="btn btn-outline-danger btn-sm">Anular venta</button>
+            </form>
+        }
+    </div>
+</div>
