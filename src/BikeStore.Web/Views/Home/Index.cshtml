@@ -59,6 +59,42 @@ else
         </div>
     </div>
 
+    @if (Model.StockBajo.Count > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <strong>Stock actual frente al mínimo requerido</strong>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoStock" height="90"></canvas>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script>
+            (function () {
+                const etiquetas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StockBajo.Select(b => b.Marca + " " + b.Modelo)));
+                const stockActual = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StockBajo.Select(b => b.Stock)));
+                const stockMinimo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StockBajo.Select(b => b.StockMinimo)));
+
+                new Chart(document.getElementById('graficoStock'), {
+                    type: 'bar',
+                    data: {
+                        labels: etiquetas,
+                        datasets: [
+                            { label: 'Stock actual', data: stockActual, backgroundColor: '#dc3545' },
+                            { label: 'Stock mínimo', data: stockMinimo, backgroundColor: '#0d6efd' }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    }
+                });
+            })();
+        </script>
+    }
+
     <div class="card">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <strong>Bicicletas que requieren reposición</strong>
