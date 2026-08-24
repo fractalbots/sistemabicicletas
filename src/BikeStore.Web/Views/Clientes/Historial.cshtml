@@ -1,0 +1,68 @@
+@model List<HistorialVenta>
+@{
+    var cliente = ViewBag.Cliente as Cliente;
+    ViewData["Title"] = "Historial de compras";
+}
+
+<div class="mb-3">
+    <h1 class="h3 mb-1">Historial de compras</h1>
+    <p class="text-muted mb-0 small">
+        @cliente?.Nombres @cliente?.Apellidos &middot; cédula @cliente?.Cedula
+        &middot; procedimiento sp_VentasPorCliente
+    </p>
+</div>
+
+<div class="card mb-3">
+    <div class="table-responsive">
+        <table class="table table-hover tabla-compacta mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Fecha</th>
+                    <th class="text-end">Ítems</th>
+                    <th class="text-end">Subtotal</th>
+                    <th class="text-end">IVA</th>
+                    <th class="text-end">Total</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Este cliente todavía no tiene compras registradas.
+                        </td>
+                    </tr>
+                }
+                @foreach (var v in Model)
+                {
+                    <tr>
+                        <td>
+                            <a asp-controller="Ventas" asp-action="Details" asp-route-id="@v.IdVenta">
+                                @v.IdVenta
+                            </a>
+                        </td>
+                        <td>@v.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-end">@v.NumItems</td>
+                        <td class="text-end">$@v.Subtotal.ToString("N2")</td>
+                        <td class="text-end">$@v.Iva.ToString("N2")</td>
+                        <td class="text-end fw-semibold">$@v.Total.ToString("N2")</td>
+                        <td>
+                            @if (v.Estado == "EMITIDA")
+                            {
+                                <span class="badge text-bg-success">EMITIDA</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">ANULADA</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<a asp-action="Index" class="btn btn-outline-secondary">Volver a clientes</a>

@@ -1,29 +1,39 @@
+using BikeStore.Web.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
+
+/* ----------------------------------------------------------------
+   Cliente HTTP tipado hacia la API REST.
+   Esta capa NO accede a la base de datos: toda la información se
+   obtiene consumiendo BikeStore.API, que es lo que convierte a la
+   solución en una verdadera arquitectura cliente-servidor.
+   ---------------------------------------------------------------- */
+var urlApi = builder.Configuration["ApiSettings:BaseUrl"]
+    ?? throw new InvalidOperationException("Falta la configuración 'ApiSettings:BaseUrl'.");
+
+builder.Services.AddHttpClient<ServicioApi>(cliente =>
+{
+    cliente.BaseAddress = new Uri(urlApi);
+    cliente.Timeout = TimeSpan.FromSeconds(30);
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
-
 app.UseAuthorization();
-
-app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
-
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

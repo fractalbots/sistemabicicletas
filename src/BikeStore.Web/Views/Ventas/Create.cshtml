@@ -1,0 +1,241 @@
+@model CrearVentaViewModel
+@{
+    ViewData["Title"] = "Nueva venta";
+}
+
+<div class="mb-3">
+    <h1 class="h3 mb-1">Registrar venta</h1>
+    <p class="text-muted mb-0 small">
+        Los precios y totales los calcula el servidor mediante sp_RegistrarVenta
+    </p>
+</div>
+
+<div asp-validation-summary="All" class="alert alert-danger d-none-if-empty"></div>
+
+<form asp-action="Create" method="post" id="formVenta">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="DetalleJson" id="campoDetalle" />
+
+    <div class="card mb-3">
+        <div class="card-header bg-white"><strong>1. Cliente</strong></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <select asp-for="IdCliente" class="form-select" id="selectCliente">
+                        <option value="0">Seleccione un cliente…</option>
+                        @foreach (var c in Model.Clientes)
+                        {
+                            <option value="@c.IdCliente">
+                                @c.Cedula &mdash; @c.Nombres @c.Apellidos
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="IdCliente" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <a asp-controller="Clientes" asp-action="Create"
+                       class="btn btn-outline-secondary w-100">Registrar cliente nuevo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-white"><strong>2. Productos</strong></div>
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-7">
+                    <label class="form-label small text-muted">Bicicleta</label>
+                    <select id="selectBicicleta" class="form-select">
+                        <option value="">Seleccione…</option>
+                        @foreach (var b in Model.Bicicletas)
+                        {
+                            <option value="@b.IdBicicleta"
+                                    data-precio="@b.Precio.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                    data-stock="@b.Stock"
+                                    data-nombre="@b.Marca @b.Modelo">
+                                @b.Marca @b.Modelo &mdash; $@b.Precio.ToString("N2")
+                                (stock: @b.Stock)
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Cantidad</label>
+                    <input type="number" id="campoCantidad" class="form-control" value="1" min="1" />
+                </div>
+                <div class="col-md-2">
+                    <button type="button" id="btnAgregar" class="btn btn-outline-primary w-100">
+                        Agregar
+                    </button>
+                </div>
+            </div>
+            <div id="avisoStock" class="text-danger small mt-2"></div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-white"><strong>3. Resumen</strong></div>
+        <div class="table-responsive">
+            <table class="table tabla-compacta mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Bicicleta</th>
+                        <th class="text-end">Cantidad</th>
+                        <th class="text-end">Precio</th>
+                        <th class="text-end">Subtotal</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoCarrito">
+                    <tr id="filaVacia">
+                        <td colspan="5" class="text-center text-muted py-4">
+                            Agregue bicicletas a la venta.
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="3" class="text-end">Subtotal estimado</td>
+                        <td class="text-end" id="totalSubtotal">$0.00</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="text-end">IVA (15%)</td>
+                        <td class="text-end" id="totalIva">$0.00</td>
+                        <td></td>
+                    </tr>
+                    <tr class="fw-semibold fs-5">
+                        <td colspan="3" class="text-end">Total estimado</td>
+                        <td class="text-end" id="totalGeneral">$0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+        <button type="submit" class="btn btn-primary" id="btnGuardar">Registrar venta</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+
+    <p class="text-muted small">
+        Los montos mostrados son una estimación local. El cálculo definitivo lo realiza
+        el procedimiento almacenado, que además valida el stock disponible bajo bloqueo.
+    </p>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const carrito = [];
+
+            const selBici = document.getElementById('selectBicicleta');
+            const inpCant = document.getElementById('campoCantidad');
+            const btnAdd = document.getElementById('btnAgregar');
+            const cuerpo = document.getElementById('cuerpoCarrito');
+            const filaVacia = document.getElementById('filaVacia');
+            const aviso = document.getElementById('avisoStock');
+            const campoDetalle = document.getElementById('campoDetalle');
+
+            const dinero = n => '$' + n.toLocaleString('en-US', {
+                minimumFractionDigits: 2, maximumFractionDigits: 2
+            });
+
+            function redibujar() {
+                cuerpo.querySelectorAll('tr[data-fila]').forEach(f => f.remove());
+
+                filaVacia.style.display = carrito.length ? 'none' : '';
+
+                let subtotal = 0;
+
+                carrito.forEach((item, indice) => {
+                    const importe = item.precio * item.cantidad;
+                    subtotal += importe;
+
+                    const fila = document.createElement('tr');
+                    fila.setAttribute('data-fila', indice);
+                    fila.innerHTML =
+                        '<td>' + item.nombre + '</td>' +
+                        '<td class="text-end">' + item.cantidad + '</td>' +
+                        '<td class="text-end">' + dinero(item.precio) + '</td>' +
+                        '<td class="text-end">' + dinero(importe) + '</td>' +
+                        '<td class="text-end"><button type="button" class="btn btn-sm ' +
+                        'btn-outline-danger" data-quitar="' + indice + '">Quitar</button></td>';
+
+                    cuerpo.appendChild(fila);
+                });
+
+                const iva = subtotal * 0.15;
+
+                document.getElementById('totalSubtotal').textContent = dinero(subtotal);
+                document.getElementById('totalIva').textContent = dinero(iva);
+                document.getElementById('totalGeneral').textContent = dinero(subtotal + iva);
+
+                campoDetalle.value = JSON.stringify(
+                    carrito.map(i => ({ idBicicleta: i.id, cantidad: i.cantidad }))
+                );
+            }
+
+            btnAdd.addEventListener('click', function () {
+                aviso.textContent = '';
+
+                const opcion = selBici.options[selBici.selectedIndex];
+                if (!selBici.value) {
+                    aviso.textContent = 'Seleccione una bicicleta.';
+                    return;
+                }
+
+                const cantidad = parseInt(inpCant.value, 10);
+                if (!cantidad || cantidad < 1) {
+                    aviso.textContent = 'La cantidad debe ser mayor a cero.';
+                    return;
+                }
+
+                const id = parseInt(selBici.value, 10);
+                const stock = parseInt(opcion.dataset.stock, 10);
+                const existente = carrito.find(i => i.id === id);
+                const acumulado = (existente ? existente.cantidad : 0) + cantidad;
+
+                if (acumulado > stock) {
+                    aviso.textContent = 'Solo hay ' + stock + ' unidad(es) en stock de este modelo.';
+                    return;
+                }
+
+                if (existente) {
+                    existente.cantidad = acumulado;
+                } else {
+                    carrito.push({
+                        id: id,
+                        nombre: opcion.dataset.nombre,
+                        precio: parseFloat(opcion.dataset.precio),
+                        cantidad: cantidad
+                    });
+                }
+
+                inpCant.value = 1;
+                selBici.selectedIndex = 0;
+                redibujar();
+            });
+
+            cuerpo.addEventListener('click', function (evento) {
+                const indice = evento.target.getAttribute('data-quitar');
+                if (indice === null) return;
+
+                carrito.splice(parseInt(indice, 10), 1);
+                redibujar();
+            });
+
+            document.getElementById('formVenta').addEventListener('submit', function (evento) {
+                if (carrito.length === 0) {
+                    evento.preventDefault();
+                    aviso.textContent = 'Agregue al menos una bicicleta antes de registrar la venta.';
+                }
+            });
+
+            redibujar();
+        })();
+    </script>
+}

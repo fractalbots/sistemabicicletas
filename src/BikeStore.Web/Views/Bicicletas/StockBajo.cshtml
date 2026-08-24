@@ -1,0 +1,62 @@
+@model List<InventarioBicicleta>
+@{
+    ViewData["Title"] = "Stock bajo";
+}
+
+<div class="mb-3">
+    <h1 class="h3 mb-1">Reposición de inventario</h1>
+    <p class="text-muted mb-0 small">
+        Resultado del procedimiento almacenado sp_BicicletasStockBajo
+    </p>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover tabla-compacta mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>Categoría</th>
+                    <th class="text-end">Stock</th>
+                    <th class="text-end">Mínimo</th>
+                    <th class="text-end">Faltante</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Todo el inventario está sobre el stock mínimo.
+                        </td>
+                    </tr>
+                }
+                @foreach (var b in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@b.Marca</td>
+                        <td>@b.Modelo</td>
+                        <td class="text-muted">@b.Categoria</td>
+                        <td class="text-end">@b.Stock</td>
+                        <td class="text-end text-muted">@b.StockMinimo</td>
+                        <td class="text-end text-danger fw-semibold">
+                            @Math.Max(0, b.StockMinimo - b.Stock)
+                        </td>
+                        <td>
+                            @if (b.EstadoStock == "AGOTADO")
+                            {
+                                <span class="badge text-bg-danger">AGOTADO</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-warning">STOCK BAJO</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

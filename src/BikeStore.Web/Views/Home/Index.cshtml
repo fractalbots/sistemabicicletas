@@ -1,8 +1,113 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model InicioViewModel
+@{
+    ViewData["Title"] = "Panel principal";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Panel principal</h1>
+        <p class="text-muted mb-0 small">Resumen del estado de la tienda</p>
+    </div>
 </div>
+
+@if (!Model.ApiDisponible)
+{
+    <div class="alert alert-warning">
+        <h5 class="alert-heading">La API no responde</h5>
+        <p class="mb-2">@Model.MensajeError</p>
+        <hr />
+        <p class="mb-0 small">
+            Abra una segunda terminal en la raíz del proyecto y ejecute:
+            <code>dotnet run --project src/BikeStore.API</code>
+        </p>
+    </div>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card tarjeta-indicador h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase">Bicicletas</div>
+                    <div class="fs-3 fw-semibold">@Model.TotalBicicletas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card tarjeta-indicador h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase">Clientes</div>
+                    <div class="fs-3 fw-semibold">@Model.TotalClientes</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card tarjeta-indicador h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase">Ventas emitidas</div>
+                    <div class="fs-3 fw-semibold">@Model.TotalVentas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card tarjeta-indicador h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase">Monto vendido</div>
+                    <div class="fs-3 fw-semibold">$@Model.MontoVendido.ToString("N2")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <strong>Bicicletas que requieren reposición</strong>
+            <span class="badge text-bg-secondary">@Model.StockBajo.Count</span>
+        </div>
+        @if (Model.StockBajo.Count == 0)
+        {
+            <div class="card-body text-muted">
+                Todo el inventario está por encima del stock mínimo.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover tabla-compacta mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Categoría</th>
+                            <th class="text-end">Stock</th>
+                            <th class="text-end">Mínimo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in Model.StockBajo)
+                        {
+                            <tr>
+                                <td>@b.Marca</td>
+                                <td>@b.Modelo</td>
+                                <td class="text-muted">@b.Categoria</td>
+                                <td class="text-end fw-semibold">@b.Stock</td>
+                                <td class="text-end text-muted">@b.StockMinimo</td>
+                                <td>
+                                    @if (b.EstadoStock == "AGOTADO")
+                                    {
+                                        <span class="badge text-bg-danger">AGOTADO</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-warning">STOCK BAJO</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}
