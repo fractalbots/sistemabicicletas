@@ -5,32 +5,41 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BikeStore.Web.Controllers;
 
-/// <summary>Panel de inicio con las cifras generales del sistema.</summary>
+/// <summary>Panel principal con indicadores del negocio.</summary>
 public class HomeController : Controller
 {
-    private readonly BikeStoreApiClient _api;
+    private readonly ServicioApi _api;
 
-    public HomeController(BikeStoreApiClient api) => _api = api;
+    public HomeController(ServicioApi api) => _api = api;
 
     public async Task<IActionResult> Index()
     {
-        var categorias = await _api.ObtenerCategoriasAsync();
-        var inventario = await _api.ObtenerInventarioAsync();
-        var clientes   = await _api.ObtenerClientesAsync();
-        var ventas     = await _api.ObtenerVentasAsync();
-        var stockBajo  = await _api.ObtenerStockBajoAsync();
+        var modelo = new InicioViewModel();
 
-        var modelo = new PanelViewModel
+        var inventario = await _api.ObtenerInventarioAsync();
+        if (!inventario.Exito)
         {
-            ApiDisponible   = categorias.Count > 0,
-            TotalBicicletas = inventario.Count,
-            TotalClientes   = clientes.Count,
-            TotalVentas     = ventas.Count,
-            PorReponer      = stockBajo.Count,
-            VentasTotales   = ventas.Where(v => v.Estado == "EMITIDA").Sum(v => v.Total),
-            StockCritico    = stockBajo.OrderBy(b => b.Stock).Take(5).ToList(),
-            UltimasVentas   = ventas.OrderByDescending(v => v.Fecha).Take(5).ToList()
-        };
+            modelo.ApiDisponible = false;
+            modelo.MensajeError = inventario.Mensaje;
+            return View(modelo);
+        }
+
+        modelo.ApiDisponible = true;
+        modelo.TotalBicicletas = inventario.Datos!.Count;
+
+        var clientes = await _api.ObtenerClientesAsync();
+        if (clientes.Exito) modelo.TotalClientes = clientes.Datos!.Count;
+
+        var ventas = await _api.ObtenerVentasAsync();
+        if (ventas.Exito)
+        {
+            var emitidas = ventas.Datos!.Where(v => v.Estado == "EMITIDA").ToList();
+            modelo.TotalVentas = emitidas.Count;
+            modelo.MontoVendido = emitidas.Sum(v => v.Total);
+        }
+
+        var stockBajo = await _api.ObtenerStockBajoAsync();
+        if (stockBajo.Exito) modelo.StockBajo = stockBajo.Datos!;
 
         return View(modelo);
     }
@@ -38,6 +47,9 @@ public class HomeController : Controller
     public IActionResult Privacy() => View();
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error() =>
-        View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    public IActionResult Error()
+        => View(new ErrorViewModel
+        {
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+        });
 }

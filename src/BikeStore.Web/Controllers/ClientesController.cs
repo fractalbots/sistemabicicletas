@@ -1,116 +1,125 @@
 using BikeStore.Domain.DTOs;
-using BikeStore.Web.Models;
+using BikeStore.Domain.Entities;
 using BikeStore.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BikeStore.Web.Controllers;
 
-/// <summary>Gestion de clientes y consulta de su historial de compras.</summary>
+/// <summary>Gestión de clientes contra los endpoints /api/Clientes.</summary>
 public class ClientesController : Controller
 {
-    private readonly BikeStoreApiClient _api;
+    private readonly ServicioApi _api;
 
-    public ClientesController(BikeStoreApiClient api) => _api = api;
+    public ClientesController(ServicioApi api) => _api = api;
 
-    public async Task<IActionResult> Index(string? cedula)
+    public async Task<IActionResult> Index()
     {
-        if (!string.IsNullOrWhiteSpace(cedula))
+        var respuesta = await _api.ObtenerClientesAsync();
+
+        if (!respuesta.Exito)
         {
-            var encontrado = await _api.BuscarClientePorCedulaAsync(cedula.Trim());
-            ViewBag.Cedula = cedula;
-
-            if (encontrado is null)
-            {
-                TempData["Error"] = $"No existe un cliente con cedula {cedula}.";
-                return View(new List<BikeStore.Domain.Entities.Cliente>());
-            }
-
-            return View(new List<BikeStore.Domain.Entities.Cliente> { encontrado });
+            TempData["Error"] = respuesta.Mensaje;
+            return View(new List<Cliente>());
         }
 
-        return View(await _api.ObtenerClientesAsync());
+        return View(respuesta.Datos);
     }
 
+    public IActionResult Create() => View(new ClienteDto());
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(ClienteDto dto)
+    {
+        if (!ModelState.IsValid) return View(dto);
+
+        var respuesta = await _api.CrearClienteAsync(dto);
+
+        if (!respuesta.Exito)
+        {
+            ModelState.AddModelError(string.Empty, respuesta.Mensaje!);
+            return View(dto);
+        }
+
+        TempData["Exito"] = $"Cliente {dto.Nombres} {dto.Apellidos} registrado correctamente.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Edit(int id)
+    {
+        var respuesta = await _api.ObtenerClienteAsync(id);
+
+        if (!respuesta.Exito)
+        {
+            TempData["Error"] = respuesta.Mensaje;
+            return RedirectToAction(nameof(Index));
+        }
+
+        var c = respuesta.Datos!;
+        ViewBag.Id = id;
+
+        return View(new ClienteDto
+        {
+            Cedula = c.Cedula,
+            Nombres = c.Nombres,
+            Apellidos = c.Apellidos,
+            Telefono = c.Telefono,
+            Correo = c.Correo,
+            Direccion = c.Direccion,
+            Activo = c.Activo
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, ClienteDto dto)
+    {
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Id = id;
+            return View(dto);
+        }
+
+        var respuesta = await _api.ActualizarClienteAsync(id, dto);
+
+        if (!respuesta.Exito)
+        {
+            ModelState.AddModelError(string.Empty, respuesta.Mensaje!);
+            ViewBag.Id = id;
+            return View(dto);
+        }
+
+        TempData["Exito"] = "Cliente actualizado correctamente.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>Historial de compras (procedimiento sp_VentasPorCliente vía API).</summary>
     public async Task<IActionResult> Historial(int id)
     {
         var cliente = await _api.ObtenerClienteAsync(id);
-        if (cliente is null) return NotFound();
 
-        return View(new HistorialClienteViewModel
+        if (!cliente.Exito)
         {
-            Cliente = cliente,
-            Ventas = await _api.ObtenerHistorialClienteAsync(id)
-        });
-    }
-
-    [HttpGet]
-    public IActionResult Create() => View(new ClienteFormViewModel());
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(ClienteFormViewModel modelo)
-    {
-        if (!ModelState.IsValid) return View(modelo);
-
-        var (exito, error) = await _api.CrearClienteAsync(modelo.Datos);
-        if (!exito)
-        {
-            ModelState.AddModelError(string.Empty, error ?? "No se pudo registrar el cliente.");
-            return View(modelo);
+            TempData["Error"] = cliente.Mensaje;
+            return RedirectToAction(nameof(Index));
         }
 
-        TempData["Exito"] = $"Cliente {modelo.Datos.Nombres} {modelo.Datos.Apellidos} registrado.";
-        return RedirectToAction(nameof(Index));
+        var historial = await _api.ObtenerHistorialClienteAsync(id);
+
+        ViewBag.Cliente = cliente.Datos;
+        return View(historial.Datos ?? new List<HistorialVenta>());
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Edit(int id)
-    {
-        var cliente = await _api.ObtenerClienteAsync(id);
-        if (cliente is null) return NotFound();
-
-        return View(new ClienteFormViewModel
-        {
-            IdCliente = cliente.IdCliente,
-            Datos = new ClienteDto
-            {
-                Cedula = cliente.Cedula,
-                Nombres = cliente.Nombres,
-                Apellidos = cliente.Apellidos,
-                Telefono = cliente.Telefono,
-                Correo = cliente.Correo,
-                Direccion = cliente.Direccion,
-                Activo = cliente.Activo
-            }
-        });
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(ClienteFormViewModel modelo)
-    {
-        if (!ModelState.IsValid) return View(modelo);
-
-        var (exito, error) = await _api.ActualizarClienteAsync(modelo.IdCliente, modelo.Datos);
-        if (!exito)
-        {
-            ModelState.AddModelError(string.Empty, error ?? "No se pudo actualizar el cliente.");
-            return View(modelo);
-        }
-
-        TempData["Exito"] = "Cliente actualizado.";
-        return RedirectToAction(nameof(Index));
-    }
-
-    /// <summary>Baja logica: el cliente deja de aparecer para nuevas ventas
-    /// pero conserva sus compras anteriores.</summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Desactivar(int id)
     {
-        var (exito, error) = await _api.DesactivarClienteAsync(id);
-        if (exito) TempData["Exito"] = "Cliente desactivado. Su historial se conserva.";
-        else       TempData["Error"] = error;
+        var respuesta = await _api.DesactivarClienteAsync(id);
+
+        if (respuesta.Exito)
+            TempData["Exito"] = "Cliente desactivado.";
+        else
+            TempData["Error"] = respuesta.Mensaje;
 
         return RedirectToAction(nameof(Index));
     }

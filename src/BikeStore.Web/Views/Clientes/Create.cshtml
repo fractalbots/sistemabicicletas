@@ -1,51 +1,24 @@
-@model ClienteFormViewModel
-@{ ViewData["Title"] = "Nuevo cliente"; }
+@model ClienteDto
+@{
+    ViewData["Title"] = "Nuevo cliente";
+}
 
-<h1 class="bs-titulo">Nuevo cliente</h1>
-<p class="bs-subtitulo">Se registra mediante <code>POST /api/clientes</code>.</p>
+<h1 class="h3 mb-3">Nuevo cliente</h1>
 
 <div class="card">
     <div class="card-body">
-        <form asp-action="Create" method="post" class="row g-3">
+        <form asp-action="Create" method="post">
             @Html.AntiForgeryToken()
-            <div asp-validation-summary="All" class="text-danger small"></div>
+            <partial name="_Formulario" model="Model" />
 
-            <div class="col-md-4">
-                <label class="form-label bs-obligatorio">Cedula</label>
-                <input asp-for="Datos.Cedula" class="form-control" maxlength="10" placeholder="10 digitos" />
-                <span asp-validation-for="Datos.Cedula" class="text-danger small"></span>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label bs-obligatorio">Nombres</label>
-                <input asp-for="Datos.Nombres" class="form-control" />
-                <span asp-validation-for="Datos.Nombres" class="text-danger small"></span>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label bs-obligatorio">Apellidos</label>
-                <input asp-for="Datos.Apellidos" class="form-control" />
-                <span asp-validation-for="Datos.Apellidos" class="text-danger small"></span>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Telefono</label>
-                <input asp-for="Datos.Telefono" class="form-control" maxlength="15" />
-                <span asp-validation-for="Datos.Telefono" class="text-danger small"></span>
-            </div>
-            <div class="col-md-8">
-                <label class="form-label">Correo</label>
-                <input asp-for="Datos.Correo" class="form-control" />
-                <span asp-validation-for="Datos.Correo" class="text-danger small"></span>
-            </div>
-            <div class="col-12">
-                <label class="form-label">Direccion</label>
-                <input asp-for="Datos.Direccion" class="form-control" />
-            </div>
-
-            <div class="col-12 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Registrar cliente</button>
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Guardar</button>
                 <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
             </div>
         </form>
     </div>
 </div>
 
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

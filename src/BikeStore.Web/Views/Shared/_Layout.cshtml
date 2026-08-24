@@ -6,55 +6,79 @@
     <title>@ViewData["Title"] - BikeStore</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        .navbar-brand { font-weight: 600; letter-spacing: -.02em; }
+        .tarjeta-indicador { border-left: 4px solid #0d6efd; }
+        .tabla-compacta td, .tabla-compacta th { padding: .5rem .75rem; font-size: .925rem; }
+    </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
-    <nav class="navbar navbar-expand-lg navbar-dark bs-navbar">
-        <div class="container">
-            <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">
-                <span class="bs-brand-mark">&#9679;&#9679;</span> BikeStore
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="menu">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" asp-controller="Bicicletas" asp-action="Index">Inventario</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Clientes" asp-action="Index">Clientes</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Ventas" asp-action="Index">Ventas</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Bicicletas" asp-action="StockBajo">Stock bajo</a></li>
-                </ul>
-                <a class="btn btn-light btn-sm fw-semibold" asp-controller="Ventas" asp-action="Create">Nueva venta</a>
+<body class="bg-light">
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    BikeStore
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#menuPrincipal">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="menuPrincipal">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Bicicletas" asp-action="Index">Inventario</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Clientes" asp-action="Index">Clientes</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Ventas" asp-action="Index">Ventas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Bicicletas" asp-action="StockBajo">
+                                Stock bajo
+                            </a>
+                        </li>
+                    </ul>
+                    <a class="btn btn-primary btn-sm" asp-controller="Ventas" asp-action="Create">
+                        Nueva venta
+                    </a>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    </header>
 
-    <main class="container flex-grow-1 py-4">
-        @if (TempData["Exito"] is string exito)
+    <div class="container py-4">
+        @if (TempData["Exito"] is string mensajeExito)
         {
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                @exito
+                @mensajeExito
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
-        @if (TempData["Error"] is string error)
+        @if (TempData["Error"] is string mensajeError)
         {
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                @error
+                @mensajeError
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
 
-        @RenderBody()
-    </main>
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
 
-    <footer class="bs-footer">
-        <div class="container py-3 small">
-            BikeStore &mdash; Sistemas Cliente Servidor 2026 &middot; Frontend MVC consumiendo la API REST
+    <footer class="border-top text-muted py-3 mt-4 bg-white">
+        <div class="container small">
+            BikeStore &mdash; Sistemas Cliente Servidor @DateTime.Now.Year
+            &middot; Frontend MVC consumiendo la API REST
         </div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

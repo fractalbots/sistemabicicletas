@@ -1,46 +1,68 @@
-@model HistorialClienteViewModel
-@{ ViewData["Title"] = "Historial de compras"; }
+@model List<HistorialVenta>
+@{
+    var cliente = ViewBag.Cliente as Cliente;
+    ViewData["Title"] = "Historial de compras";
+}
 
-<h1 class="bs-titulo">Historial de compras</h1>
-<p class="bs-subtitulo">
-    @Model.Cliente?.Nombres @Model.Cliente?.Apellidos &middot; cedula @Model.Cliente?.Cedula
-    &middot; procedimiento <code>sp_VentasPorCliente</code>
-</p>
+<div class="mb-3">
+    <h1 class="h3 mb-1">Historial de compras</h1>
+    <p class="text-muted mb-0 small">
+        @cliente?.Nombres @cliente?.Apellidos &middot; cédula @cliente?.Cedula
+        &middot; procedimiento sp_VentasPorCliente
+    </p>
+</div>
 
-<div class="card">
+<div class="card mb-3">
     <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-            <thead>
+        <table class="table table-hover tabla-compacta mb-0">
+            <thead class="table-light">
                 <tr>
-                    <th>#</th><th>Fecha</th><th class="text-end">Items</th>
-                    <th class="text-end">Subtotal</th><th class="text-end">IVA</th>
-                    <th class="text-end">Total</th><th>Estado</th><th></th>
+                    <th>#</th>
+                    <th>Fecha</th>
+                    <th class="text-end">Ítems</th>
+                    <th class="text-end">Subtotal</th>
+                    <th class="text-end">IVA</th>
+                    <th class="text-end">Total</th>
+                    <th>Estado</th>
                 </tr>
             </thead>
             <tbody>
-            @if (Model.Ventas.Count == 0)
-            {
-                <tr><td colspan="8" class="text-muted py-4 text-center">Este cliente todavia no tiene compras.</td></tr>
-            }
-            @foreach (var v in Model.Ventas)
-            {
-                <tr>
-                    <td>@v.IdVenta</td>
-                    <td>@v.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
-                    <td class="text-end">@v.NumItems</td>
-                    <td class="text-end">@Formato.Dinero(v.Subtotal)</td>
-                    <td class="text-end">@Formato.Dinero(v.Iva)</td>
-                    <td class="text-end fw-semibold">@Formato.Dinero(v.Total)</td>
-                    <td><span class="bs-estado @(v.Estado == "EMITIDA" ? "bs-emitida" : "bs-anulada")">@v.Estado</span></td>
-                    <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary"
-                           asp-controller="Ventas" asp-action="Details" asp-route-id="@v.IdVenta">Ver</a>
-                    </td>
-                </tr>
-            }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Este cliente todavía no tiene compras registradas.
+                        </td>
+                    </tr>
+                }
+                @foreach (var v in Model)
+                {
+                    <tr>
+                        <td>
+                            <a asp-controller="Ventas" asp-action="Details" asp-route-id="@v.IdVenta">
+                                @v.IdVenta
+                            </a>
+                        </td>
+                        <td>@v.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-end">@v.NumItems</td>
+                        <td class="text-end">$@v.Subtotal.ToString("N2")</td>
+                        <td class="text-end">$@v.Iva.ToString("N2")</td>
+                        <td class="text-end fw-semibold">$@v.Total.ToString("N2")</td>
+                        <td>
+                            @if (v.Estado == "EMITIDA")
+                            {
+                                <span class="badge text-bg-success">EMITIDA</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">ANULADA</span>
+                            }
+                        </td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
 </div>
 
-<a asp-action="Index" class="btn btn-outline-secondary btn-sm mt-3">Volver a clientes</a>
+<a asp-action="Index" class="btn btn-outline-secondary">Volver a clientes</a>

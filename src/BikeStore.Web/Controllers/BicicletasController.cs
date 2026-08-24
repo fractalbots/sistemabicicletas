@@ -1,122 +1,144 @@
 using BikeStore.Domain.DTOs;
-using BikeStore.Web.Models;
 using BikeStore.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BikeStore.Web.Controllers;
 
-/// <summary>
-/// Catalogo e inventario. Toda la informacion se obtiene de la API REST:
-/// este controlador no conoce la base de datos.
-/// </summary>
+/// <summary>Catálogo de bicicletas. Toda la información proviene de la API REST.</summary>
 public class BicicletasController : Controller
 {
-    private readonly BikeStoreApiClient _api;
+    private readonly ServicioApi _api;
 
-    public BicicletasController(BikeStoreApiClient api) => _api = api;
+    public BicicletasController(ServicioApi api) => _api = api;
 
-    /// <summary>Inventario con filtros por marca, modelo y categoria.</summary>
     public async Task<IActionResult> Index(string? marca, string? modelo, int? idCategoria)
     {
-        var modeloVista = new FiltroInventarioViewModel
-        {
-            Marca = marca,
-            Modelo = modelo,
-            IdCategoria = idCategoria,
-            Categorias = await _api.ObtenerCategoriasAsync()
-        };
+        var hayFiltro = !string.IsNullOrWhiteSpace(marca)
+                     || !string.IsNullOrWhiteSpace(modelo)
+                     || idCategoria.HasValue;
 
-        modeloVista.Resultados = modeloVista.HayFiltros
+        var respuesta = hayFiltro
             ? await _api.BuscarInventarioAsync(marca, modelo, idCategoria)
             : await _api.ObtenerInventarioAsync();
 
-        return View(modeloVista);
+        if (!respuesta.Exito)
+        {
+            TempData["Error"] = respuesta.Mensaje;
+            return View(new List<BikeStore.Domain.Entities.InventarioBicicleta>());
+        }
+
+        ViewBag.Marca = marca;
+        ViewBag.Modelo = modelo;
+        ViewBag.IdCategoria = idCategoria;
+        ViewBag.Categorias = (await _api.ObtenerCategoriasAsync()).Datos ?? new();
+
+        return View(respuesta.Datos);
     }
 
-    /// <summary>Productos que requieren reposicion (sp_BicicletasStockBajo).</summary>
     public async Task<IActionResult> StockBajo()
-        => View(await _api.ObtenerStockBajoAsync());
+    {
+        var respuesta = await _api.ObtenerStockBajoAsync();
 
-    [HttpGet]
+        if (!respuesta.Exito)
+        {
+            TempData["Error"] = respuesta.Mensaje;
+            return View(new List<BikeStore.Domain.Entities.InventarioBicicleta>());
+        }
+
+        return View(respuesta.Datos);
+    }
+
     public async Task<IActionResult> Create()
-        => View(new BicicletaFormViewModel { Categorias = await _api.ObtenerCategoriasAsync() });
+    {
+        ViewBag.Categorias = (await _api.ObtenerCategoriasAsync()).Datos ?? new();
+        return View(new BicicletaDto());
+    }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(BicicletaFormViewModel modelo)
+    public async Task<IActionResult> Create(BicicletaDto dto)
     {
         if (!ModelState.IsValid)
         {
-            modelo.Categorias = await _api.ObtenerCategoriasAsync();
-            return View(modelo);
+            ViewBag.Categorias = (await _api.ObtenerCategoriasAsync()).Datos ?? new();
+            return View(dto);
         }
 
-        var (exito, error) = await _api.CrearBicicletaAsync(modelo.Datos);
-        if (!exito)
+        var respuesta = await _api.CrearBicicletaAsync(dto);
+
+        if (!respuesta.Exito)
         {
-            ModelState.AddModelError(string.Empty, error ?? "No se pudo registrar la bicicleta.");
-            modelo.Categorias = await _api.ObtenerCategoriasAsync();
-            return View(modelo);
+            ModelState.AddModelError(string.Empty, respuesta.Mensaje!);
+            ViewBag.Categorias = (await _api.ObtenerCategoriasAsync()).Datos ?? new();
+            return View(dto);
         }
 
-        TempData["Exito"] = $"Bicicleta {modelo.Datos.Marca} {modelo.Datos.Modelo} registrada.";
+        TempData["Exito"] = $"Bicicleta {dto.Marca} {dto.Modelo} registrada correctamente.";
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var bicicleta = await _api.ObtenerBicicletaAsync(id);
-        if (bicicleta is null) return NotFound();
+        var respuesta = await _api.ObtenerBicicletaAsync(id);
 
-        return View(new BicicletaFormViewModel
+        if (!respuesta.Exito)
         {
-            IdBicicleta = bicicleta.IdBicicleta,
-            Categorias = await _api.ObtenerCategoriasAsync(),
-            Datos = new BicicletaDto
-            {
-                IdCategoria = bicicleta.IdCategoria,
-                Marca = bicicleta.Marca,
-                Modelo = bicicleta.Modelo,
-                Descripcion = bicicleta.Descripcion,
-                Precio = bicicleta.Precio,
-                Stock = bicicleta.Stock,
-                StockMinimo = bicicleta.StockMinimo,
-                Estado = bicicleta.Estado
-            }
+            TempData["Error"] = respuesta.Mensaje;
+            return RedirectToAction(nameof(Index));
+        }
+
+        var b = respuesta.Datos!;
+        ViewBag.Categorias = (await _api.ObtenerCategoriasAsync()).Datos ?? new();
+        ViewBag.Id = id;
+
+        return View(new BicicletaDto
+        {
+            IdCategoria = b.IdCategoria,
+            Marca = b.Marca,
+            Modelo = b.Modelo,
+            Descripcion = b.Descripcion,
+            Precio = b.Precio,
+            Stock = b.Stock,
+            StockMinimo = b.StockMinimo,
+            Estado = b.Estado
         });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(BicicletaFormViewModel modelo)
+    public async Task<IActionResult> Edit(int id, BicicletaDto dto)
     {
         if (!ModelState.IsValid)
         {
-            modelo.Categorias = await _api.ObtenerCategoriasAsync();
-            return View(modelo);
+            ViewBag.Categorias = (await _api.ObtenerCategoriasAsync()).Datos ?? new();
+            ViewBag.Id = id;
+            return View(dto);
         }
 
-        var (exito, error) = await _api.ActualizarBicicletaAsync(modelo.IdBicicleta, modelo.Datos);
-        if (!exito)
+        var respuesta = await _api.ActualizarBicicletaAsync(id, dto);
+
+        if (!respuesta.Exito)
         {
-            ModelState.AddModelError(string.Empty, error ?? "No se pudo actualizar la bicicleta.");
-            modelo.Categorias = await _api.ObtenerCategoriasAsync();
-            return View(modelo);
+            ModelState.AddModelError(string.Empty, respuesta.Mensaje!);
+            ViewBag.Categorias = (await _api.ObtenerCategoriasAsync()).Datos ?? new();
+            ViewBag.Id = id;
+            return View(dto);
         }
 
-        TempData["Exito"] = "Bicicleta actualizada.";
+        TempData["Exito"] = "Bicicleta actualizada correctamente.";
         return RedirectToAction(nameof(Index));
     }
 
-    /// <summary>Baja logica: conserva el historial de ventas del producto.</summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Desactivar(int id)
     {
-        var (exito, error) = await _api.DesactivarBicicletaAsync(id);
-        if (exito) TempData["Exito"] = "Bicicleta desactivada.";
-        else       TempData["Error"] = error;
+        var respuesta = await _api.DesactivarBicicletaAsync(id);
+
+        if (respuesta.Exito)
+            TempData["Exito"] = "Bicicleta desactivada del catálogo.";
+        else
+            TempData["Error"] = respuesta.Mensaje;
 
         return RedirectToAction(nameof(Index));
     }

@@ -5,16 +5,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 /* ----------------------------------------------------------------
-   Cliente HTTP hacia la API REST.
-   La aplicacion web NO conoce la cadena de conexion ni toca SQL
-   Server: toda la informacion llega a traves de estos servicios.
-   La direccion de la API se configura en appsettings.json.
+   Cliente HTTP tipado hacia la API REST.
+   Esta capa NO accede a la base de datos: toda la información se
+   obtiene consumiendo BikeStore.API, que es lo que convierte a la
+   solución en una verdadera arquitectura cliente-servidor.
    ---------------------------------------------------------------- */
 var urlApi = builder.Configuration["ApiSettings:BaseUrl"]
-    ?? throw new InvalidOperationException(
-        "Falta la clave 'ApiSettings:BaseUrl' en appsettings.json.");
+    ?? throw new InvalidOperationException("Falta la configuración 'ApiSettings:BaseUrl'.");
 
-builder.Services.AddHttpClient<BikeStoreApiClient>(cliente =>
+builder.Services.AddHttpClient<ServicioApi>(cliente =>
 {
     cliente.BaseAddress = new Uri(urlApi);
     cliente.Timeout = TimeSpan.FromSeconds(30);
@@ -28,6 +27,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
