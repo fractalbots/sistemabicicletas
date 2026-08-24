@@ -1,10 +1,16 @@
 @model FiltroInventarioViewModel
-@{ ViewData["Title"] = "Inventario"; }
+@{
+    ViewData["Title"] = "Inventario";
+}
 
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
     <div>
         <h1 class="bs-titulo">Inventario de bicicletas</h1>
         <p class="bs-subtitulo">Datos de la vista <code>vw_InventarioBicicletas</code> a traves de la API REST.</p>
+
+        <span class="badge bg-primary mb-2">
+            @Model.Resultados.Count bicicleta(s) encontrada(s)
+        </span>
     </div>
     <a class="btn btn-primary" asp-action="Create">Nueva bicicleta</a>
 </div>
@@ -43,42 +49,58 @@
         <table class="table table-sm align-middle mb-0">
             <thead>
                 <tr>
-                    <th>Marca</th><th>Modelo</th><th>Categoria</th>
-                    <th class="text-end">Precio</th><th class="text-end">Stock</th>
-                    <th>Estado stock</th><th class="text-end">Acciones</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>Categoria</th>
+                    <th class="text-end">Precio</th>
+                    <th class="text-end">Stock</th>
+                    <th>Estado stock</th>
+                    <th class="text-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-            @if (Model.Resultados.Count == 0)
-            {
-                <tr><td colspan="7" class="text-muted py-4 text-center">No se encontraron bicicletas con esos criterios.</td></tr>
-            }
-            @foreach (var b in Model.Resultados)
-            {
-                <tr>
-                    <td class="fw-semibold">@b.Marca</td>
-                    <td>@b.Modelo</td>
-                    <td>@b.Categoria</td>
-                    <td class="text-end">@Formato.Dinero(b.Precio)</td>
-                    <td class="text-end">@b.Stock</td>
-                    <td>
-                        <span class="bs-estado @(b.EstadoStock == "AGOTADO" ? "bs-estado-agotado"
-                                               : b.EstadoStock == "STOCK BAJO" ? "bs-estado-bajo"
-                                               : "bs-estado-disponible")">@b.EstadoStock</span>
-                    </td>
-                    <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary" asp-action="Edit" asp-route-id="@b.IdBicicleta">Editar</a>
-                        <form asp-action="Desactivar" method="post" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@b.IdBicicleta" />
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Desactivar</button>
-                        </form>
-                    </td>
-                </tr>
-            }
+                @if (Model.Resultados.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-muted py-4 text-center">
+                            No se encontraron bicicletas con esos criterios.
+                        </td>
+                    </tr>
+                }
+
+                @foreach (var b in Model.Resultados)
+                {
+                    <tr>
+                        <td class="fw-semibold">@b.Marca</td>
+                        <td>@b.Modelo</td>
+                        <td>@b.Categoria</td>
+                        <td class="text-end">@Formato.Dinero(b.Precio)</td>
+                        <td class="text-end">@b.Stock</td>
+                        <td>
+                            <span class="bs-estado @(b.EstadoStock == "AGOTADO" ? "bs-estado-agotado"
+                                                                               : b.EstadoStock == "STOCK BAJO" ? "bs-estado-bajo"
+                                                                               : "bs-estado-disponible")">
+                                @b.EstadoStock
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-secondary"
+                               asp-action="Edit"
+                               asp-route-id="@b.IdBicicleta">
+                                Editar
+                            </a>
+
+                            <form asp-action="Desactivar" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@b.IdBicicleta" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    Desactivar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
 </div>
-
-<p class="text-muted small mt-2">@Model.Resultados.Count registro(s).</p>
